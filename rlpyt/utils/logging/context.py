@@ -6,6 +6,7 @@ import os.path as osp
 import json
 
 from rlpyt.utils.logging import logger
+from torch.utils.tensorboard import SummaryWriter
 
 LOG_DIR = osp.abspath(osp.join(osp.dirname(__file__), '../../../data'))
 
@@ -63,6 +64,10 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)
+
+    # set summary_writer
+    logger.set_tf_summary_dir(exp_dir)
+    logger.set_tf_summary_writer(SummaryWriter(exp_dir))
 
     yield
 
