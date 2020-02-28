@@ -14,8 +14,8 @@ from rlpyt.samplers.parallel.cpu.sampler import CpuSampler
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.gpu.alternating_sampler import AlternatingSampler
 from rlpyt.envs.gym import make as gym_make
-from rlpyt.algos.qpg.td3 import TD3
-from rlpyt.agents.qpg.td3_agent import Td3Agent
+from rlpyt.algos.qpg.ddpg import DDPG
+from rlpyt.agents.qpg.ddpg_agent import DdpgAgent
 from rlpyt.runners.minibatch_rl import MinibatchRl
 from rlpyt.utils.logging.context import logger_context
 
@@ -49,8 +49,8 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
         eval_max_steps=int(51e3),
         eval_max_trajectories=50,
     )
-    algo = TD3()  # Run with defaults.
-    agent = Td3Agent()
+    algo = DDPG()  # Run with defaults.
+    agent = DdpgAgent()
     runner = MinibatchRl(
         algo=algo,
         agent=agent,
@@ -60,8 +60,8 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
         affinity=affinity,
     )
     config = dict(env_id=env_id)
-    name = "td3" + env_id
-    log_dir = "td3"
+    name = "ddpg" + env_id
+    log_dir = "ddpg"
     with logger_context(log_dir, run_ID, name, config):
         runner.train()
 
