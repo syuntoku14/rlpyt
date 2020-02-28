@@ -78,7 +78,7 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
     config = dict(env_id=env_id)
     name = "ddpg" + env_id
     log_dir = "ddpg"
-    with logger_context(log_dir, run_ID, name, config):
+    with logger_context(log_dir, run_ID, name, config, snapshot_mode="all"):
         runner.train()
 
 

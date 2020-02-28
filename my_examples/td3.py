@@ -57,6 +57,7 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
     optimizer_state_dict = None
     model_state_dict = None
     q_state_dict = None
+    q2_state_dict = None
     if snapshot_pth is not None:
         data = torch.load(snapshot_pth)
         itr = data['itr']  # might be useful for logging / debugging
@@ -80,7 +81,7 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
     config = dict(env_id=env_id)
     name = "td3" + env_id
     log_dir = "td3"
-    with logger_context(log_dir, run_ID, name, config):
+    with logger_context(log_dir, run_ID, name, config, snapshot_mode="all"):
         runner.train()
 
 
