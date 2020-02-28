@@ -78,7 +78,7 @@ RUN apt-get update && apt-get install -y mlocate less tmux vim lxterminal mesa-u
     && apt-get clean && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
 
 RUN git clone https://github.com/astooke/rlpyt.git && cd rlpyt && pip install -e .
-RUN pip install psutil pyprind atari-py box2d-py
+RUN pip install psutil pyprind atari-py box2d-py ptvsd
 
 ENV APP "lxterminal -e bash"
 

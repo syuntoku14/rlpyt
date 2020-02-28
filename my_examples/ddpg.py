@@ -18,9 +18,10 @@ from rlpyt.algos.qpg.ddpg import DDPG
 from rlpyt.agents.qpg.ddpg_agent import DdpgAgent
 from rlpyt.runners.minibatch_rl import MinibatchRl
 from rlpyt.utils.logging.context import logger_context
+import torch
 
-
-def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, sample_mode="serial", n_parallel=2):
+def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, sample_mode="serial", n_parallel=2,
+                    snapshot_pth=None):
     affinity = dict(cuda_idx=cuda_idx, workers_cpus=list(range(n_parallel)))
     gpu_cpu = "CPU" if cuda_idx is None else f"GPU {cuda_idx}"
     if sample_mode == "serial":
@@ -28,15 +29,18 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
         print(f"Using serial sampler, {gpu_cpu} for sampling and optimizing.")
     elif sample_mode == "cpu":
         Sampler = CpuSampler
-        print(f"Using CPU parallel sampler (agent in workers), {gpu_cpu} for optimizing.")
+        print(
+            f"Using CPU parallel sampler (agent in workers), {gpu_cpu} for optimizing.")
     elif sample_mode == "gpu":
         Sampler = GpuSampler
-        print(f"Using GPU parallel sampler (agent in master), {gpu_cpu} for sampling and optimizing.")
+        print(
+            f"Using GPU parallel sampler (agent in master), {gpu_cpu} for sampling and optimizing.")
     elif sample_mode == "alternating":
         Sampler = AlternatingSampler
         affinity["workers_cpus"] += affinity["workers_cpus"]  # (Double list)
         affinity["alternating"] = True  # Sampler will check for this.
-        print(f"Using Alternating GPU parallel sampler, {gpu_cpu} for sampling and optimizing.")
+        print(
+            f"Using Alternating GPU parallel sampler, {gpu_cpu} for sampling and optimizing.")
 
     sampler = Sampler(
         EnvCls=gym_make,
@@ -49,8 +53,20 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
         eval_max_steps=int(51e3),
         eval_max_trajectories=50,
     )
-    algo = DDPG()  # Run with defaults.
-    agent = DdpgAgent()
+
+    optimizer_state_dict = None
+    model_state_dict = None
+    q_state_dict = None
+    if snapshot_pth is not None:
+        data = torch.load(snapshot_pth)
+        itr = data['itr']  # might be useful for logging / debugging
+        cum_steps = data['cum_steps']  # might be useful for logging / debugging
+        agent_state_dict = data['agent_state_dict']  # 'model' and 'target' keys
+        model_state_dict = agent_state_dict['model']
+        q_state_dict = agent_state_dict["q_model"]
+        optimizer_state_dict = data['optimizer_state_dict']
+    algo = DDPG(initial_optim_state_dict=optimizer_state_dict)  # Run with defaults.
+    agent = DdpgAgent(initial_model_state_dict=model_state_dict, initial_q_model_state_dict=q_state_dict)
     runner = MinibatchRl(
         algo=algo,
         agent=agent,
@@ -68,18 +84,32 @@ def build_and_train(env_id="LunarLandarContinuous-v2", run_ID=0, cuda_idx=None, 
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--env_id', type=str, help='environment ID', default='LunarLanderContinuous-v2')
-    parser.add_argument('--run_ID', help='run identifier (logging)', type=int, default=0)
-    parser.add_argument('--cuda_idx', help='gpu to use ', type=int, default=None)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--env_id', type=str, help='environment ID',
+                        default='LunarLanderContinuous-v2')
+    parser.add_argument(
+        '--run_ID', help='run identifier (logging)', type=int, default=0)
+    parser.add_argument('--cuda_idx', help='gpu to use ',
+                        type=int, default=None)
     parser.add_argument('--sample_mode', help='serial or parallel sampling',
-        type=str, default='cpu', choices=['serial', 'cpu', 'gpu', 'alternating'])
-    parser.add_argument('--n_parallel', help='number of sampler workers', type=int, default=4)
+                        type=str, default='cpu', choices=['serial', 'cpu', 'gpu', 'alternating'])
+    parser.add_argument(
+        '--n_parallel', help='number of sampler workers', type=int, default=4)
+    parser.add_argument('--snapshot_pth', type=str, default=None)
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
+
+    if args.debug:
+        import ptvsd
+        ptvsd.enable_attach()
+        ptvsd.wait_for_attach()
+
     build_and_train(
         env_id=args.env_id,
         run_ID=args.run_ID,
         cuda_idx=args.cuda_idx,
         sample_mode=args.sample_mode,
         n_parallel=args.n_parallel,
+        snapshot_pth=args.snapshot_pth
     )

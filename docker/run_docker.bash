@@ -4,6 +4,7 @@ run_docker() {
 docker run --rm -it --privileged \
 	-p 6080:6080 \
 	-p 8888:8888 \
+	-p 5678:5678 \
 	-v ~/RL_ws:/root/RL_ws \
 	-v ~/rlpyt:/root/rlpyt \
 	-e DISPLAY=:0 \
@@ -17,6 +18,7 @@ run_docker_gpu() {
 docker run --rm -it --privileged \
 	-p 6080:6080 \
 	-p 8888:8888 \
+	-p 5678:5678 \
 	-v ~/RL_ws:/root/RL_ws \
 	-v ~/rlpyt:/root/rlpyt \
 	-e DISPLAY=:0 \
